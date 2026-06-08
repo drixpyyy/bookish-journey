@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RGB Encrypted Image Vault</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0d12;
+      --panel: #11151d;
+      --panel-2: #171c27;
+      --text: #e8ecf3;
+      --muted: #94a3b8;
+      --accent: #8b5cf6;
+      --accent-2: #22d3ee;
+      --danger: #fb7185;
+      --ok: #34d399;
+      --border: #273042;
+      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(139,92,246,.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(34,211,238,.12), transparent 24%),
+        linear-gradient(180deg, #07090d 0%, #0b0d12 55%, #090b10 100%);
+      color: var(--text);
+      padding: 24px;
+    }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    header {
+      padding: 12px 4px 6px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin-top: 10px;
+      max-width: 72ch;
+      line-height: 1.55;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 920px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      padding: 16px 18px 0;
+    }
+
+    .card p.lead {
+      margin: 8px 18px 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .body {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      font-size: .92rem;
+      color: #cbd5e1;
+    }
+
+    input[type="text"], input[type="password"], input[type="file"], textarea {
+      width: 100%;
+      border: 1px solid #2b364a;
+      background: var(--panel-2);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      outline: none;
+      transition: .15s ease;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    input:focus, textarea:focus {
+      border-color: rgba(139,92,246,.9);
+      box-shadow: 0 0 0 4px rgba(139,92,246,.14);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 640px) {
+      .row { grid-template-columns: 1fr; }
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button, .btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, var(--accent), #6d28d9);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .15s ease, filter .15s ease, opacity .15s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button:hover, .btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
+    button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+    .secondary {
+      background: linear-gradient(135deg, #1f2937, #0f172a);
+      border: 1px solid #2c374a;
+    }
+
+    .danger {
+      background: linear-gradient(135deg, #be123c, #7f1d1d);
+    }
+
+    .mini {
+      font-size: .85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .status {
+      border: 1px solid #2a3345;
+      background: rgba(255,255,255,.03);
+      border-radius: 14px;
+      padding: 12px 14px;
+      min-height: 48px;
+      line-height: 1.45;
+      color: #dbe4f0;
+      white-space: pre-wrap;
+    }
+
+    .status.ok { border-color: rgba(52,211,153,.35); }
+    .status.bad { border-color: rgba(251,113,133,.42); }
+
+    .preview {
+      display: grid;
+      gap: 14px;
+    }
+
+    .frame {
+      border: 1px solid var(--border);
+      background: #05070b;
+      border-radius: 18px;
+      overflow: hidden;
+      min-height: 280px;
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .frame img, .frame canvas {
+      max-width: 100%;
+      display: block;
+    }
+
+    .meta {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    @media (max-width: 640px) {
+      .meta { grid-template-columns: 1fr; }
+    }
+
+    .pill {
+      border: 1px solid #273042;
+      border-radius: 14px;
+      background: rgba(255,255,255,.03);
+      padding: 12px 14px;
+    }
+
+    .pill b {
+      display: block;
+      font-size: .75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .pill span { word-break: break-word; }
+
+    .footer {
+      color: var(--muted);
+      font-size: .88rem;
+      line-height: 1.5;
+      padding: 0 4px 6px;
+    }
+
+    .dropzone {
+      border: 1.5px dashed #334155;
+      border-radius: 16px;
+      background: rgba(255,255,255,.02);
+      padding: 16px;
+      text-align: center;
+      color: var(--muted);
+      transition: .15s ease;
+    }
+
+    .dropzone.dragover {
+      border-color: rgba(34,211,238,.8);
+      background: rgba(34,211,238,.06);
+      color: #d7fbff;
+    }
+
+    code {
+      background: rgba(255,255,255,.06);
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>RGB Encrypted Image Vault</h1>
+      <p class="sub">
+        Paste an image link or load a local image, encrypt it with a passphrase, and pack the encrypted bytes into an RGB PNG.
+        Decrypting happens only inside this page. Tiny pixel crypt, no outside keyhole 🕯️
+      </p>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Encode</h2>
+        <p class="lead">Turn a URL or local image into downloadable encrypted RGB data.</p>
+        <div class="body">
+          <label>
+            Image URL
+            <input id="urlInput" type="text" placeholder="https://example.com/image.png" />
+          </label>
+
+          <label>
+            Or load a local image
+            <input id="fileInput" type="file" accept="image/*" />
+          </label>
+
+          <div class="dropzone" id="dropzone">Drop an image here</div>
+
+          <div class="row">
+            <label>
+              Passphrase
+              <input id="passInput" type="password" placeholder="Something only you know" />
+            </label>
+            <label>
+              Output filename
+              <input id="nameInput" type="text" value="vault.png" />
+            </label>
+          </div>
+
+          <div class="actions">
+            <button id="encodeBtn">Encrypt and build PNG</button>
+            <button id="clearBtn" class="secondary" type="button">Clear</button>
+          </div>
+
+          <div id="encodeStatus" class="status">Waiting for an image source.</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Decode</h2>
+        <p class="lead">Upload the encrypted PNG and restore the original image with the same passphrase.</p>
+        <div class="body">
+          <label>
+            Encrypted PNG
+            <input id="decodeFileInput" type="file" accept="image/png,image/*" />
+          </label>
+
+          <label>
+            Passphrase
+            <input id="decodePassInput" type="password" placeholder="Same passphrase as before" />
+          </label>
+
+          <div class="actions">
+            <button id="decodeBtn">Decrypt image</button>
+          </div>
+
+          <div id="decodeStatus" class="status">No file loaded yet.</div>
+
+          <div class="preview">
+            <div class="frame" id="previewFrame">
+              <span class="mini">Decoded preview appears here</span>
+            </div>
+            <div class="meta">
+              <div class="pill"><b>Type</b><span id="metaType">-</span></div>
+              <div class="pill"><b>Bytes</b><span id="metaBytes">-</span></div>
+              <div class="pill"><b>Download</b><span id="metaDownload">-</span></div>
+            </div>
+            <a id="downloadLink" class="btn secondary" href="#" download style="display:none;">Download restored image</a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <p class="footer">
+      Notes: remote image URLs must allow CORS for the browser to fetch them. Local files always work.
+      If a link is blocked, save the image first or use a CORS-enabled source.
+    </p>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const enc = new TextEncoder();
+    const dec = new TextDecoder();
+    const MAGIC = new Uint8Array([0x52, 0x47, 0x42, 0x45]); // RGBE
+    const VERSION = 1;
+
+    let lastEncodedObjectUrl = null;
+    let lastDecodedObjectUrl = null;
+
+    function setStatus(el, message, kind = "") {
+      el.className = `status ${kind}`.trim();
+      el.textContent = message;
+    }
+
+    function u32ToBytes(n) {
+      const a = new Uint8Array(4);
+      new DataView(a.buffer).setUint32(0, n >>> 0, false);
+      return a;
+    }
+
+    function bytesToU32(bytes, offset) {
+      return new DataView(bytes.buffer, bytes.byteOffset + offset, 4).getUint32(0, false);
+    }
+
+    function concatBytes(parts) {
+      const total = parts.reduce((sum, p) => sum + p.length, 0);
+      const out = new Uint8Array(total);
+      let offset = 0;
+      for (const p of parts) {
+        out.set(p, offset);
+        offset += p.length;
+      }
+      return out;
+    }
+
+    async function deriveKey(passphrase, salt) {
+      const baseKey = await crypto.subtle.importKey(
+        "raw",
+        enc.encode(passphrase),
+        "PBKDF2",
+        false,
+        ["deriveKey"]
+      );
+      return crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt,
+          iterations: 150000,
+          hash: "SHA-256"
+        },
+        baseKey,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function encryptBytes(data, passphrase) {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await deriveKey(passphrase, salt);
+      const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data));
+      const payload = concatBytes([
+        MAGIC,
+        new Uint8Array([VERSION]),
+        u32ToBytes(salt.length),
+        salt,
+        u32ToBytes(iv.length),
+        iv,
+        u32ToBytes(ciphertext.length),
+        ciphertext
+      ]);
+      return payload;
+    }
+
+    async function decryptBytes(payload, passphrase) {
+      let offset = 0;
+      const magic = payload.slice(offset, offset + 4); offset += 4;
+      if (magic[0] !== 0x52 || magic[1] !== 0x47 || magic[2] !== 0x42 || magic[3] !== 0x45) {
+        throw new Error("Not a valid RGBE file.");
+      }
+      const version = payload[offset++];
+      if (version !== VERSION) {
+        throw new Error(`Unsupported version: ${version}`);
+      }
+      const saltLen = bytesToU32(payload, offset); offset += 4;
+      const salt = payload.slice(offset, offset + saltLen); offset += saltLen;
+      const ivLen = bytesToU32(payload, offset); offset += 4;
+      const iv = payload.slice(offset, offset + ivLen); offset += ivLen;
+      const cipherLen = bytesToU32(payload, offset); offset += 4;
+      const ciphertext = payload.slice(offset, offset + cipherLen);
+      const key = await deriveKey(passphrase, salt);
+      const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+      return new Uint8Array(plain);
+    }
+
+    function bytesToRgbPngData(bytes) {
+      const pixelCount = Math.ceil(bytes.length / 3);
+      const width = Math.min(2048, Math.max(1, Math.ceil(Math.sqrt(pixelCount))));
+      const height = Math.ceil(pixelCount / width);
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d", { willReadFrequently: false });
+      const imgData = ctx.createImageData(width, height);
+      const data = imgData.data;
+      let bi = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        data[i] = bytes[bi++] ?? 0;
+        data[i + 1] = bytes[bi++] ?? 0;
+        data[i + 2] = bytes[bi++] ?? 0;
+        data[i + 3] = 255;
+      }
+      ctx.putImageData(imgData, 0, 0);
+      return { canvas, width, height };
+    }
+
+    function rgbPngDataToBytes(canvas) {
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const bytes = new Uint8Array(Math.floor(data.length / 4) * 3);
+      let bi = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        bytes[bi++] = data[i];
+        bytes[bi++] = data[i + 1];
+        bytes[bi++] = data[i + 2];
+      }
+      return bytes;
+    }
+
+    async function fetchImageBytesFromUrl(url) {
+      const response = await fetch(url, { mode: "cors" });
+      if (!response.ok) throw new Error(`Fetch failed: ${response.status} ${response.statusText}`);
+      return new Uint8Array(await response.arrayBuffer());
+    }
+
+    function readFileBytes(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(new Uint8Array(reader.result));
+        reader.onerror = () => reject(reader.error || new Error("Failed to read file."));
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    async function loadSourceBytes() {
+      const url = $("urlInput").value.trim();
+      const file = $("fileInput").files?.[0];
+      if (file) {
+        return { bytes: await readFileBytes(file), label: file.name || "local-file" };
+      }
+      if (url) {
+        return { bytes: await fetchImageBytesFromUrl(url), label: url };
+      }
+      throw new Error("Pick a URL or a local image first.");
+    }
+
+    function cleanupObjectUrl(url) {
+      if (url) URL.revokeObjectURL(url);
+    }
+
+    function showPreviewWithImageBlob(blob, fileName = "restored-image") {
+      cleanupObjectUrl(lastDecodedObjectUrl);
+      lastDecodedObjectUrl = URL.createObjectURL(blob);
+      const frame = $("previewFrame");
+      frame.innerHTML = "";
+      const img = document.createElement("img");
+      img.alt = "Decoded preview";
+      img.src = lastDecodedObjectUrl;
+      frame.appendChild(img);
+      $("downloadLink").href = lastDecodedObjectUrl;
+      $("downloadLink").download = fileName;
+      $("downloadLink").style.display = "inline-flex";
+      $("metaDownload").textContent = fileName;
+    }
+
+    $("encodeBtn").addEventListener("click", async () => {
+      const status = $("encodeStatus");
+      const passphrase = $("passInput").value;
+      const outName = $("nameInput").value.trim() || "vault.png";
+      if (!passphrase) {
+        setStatus(status, "Add a passphrase first.", "bad");
+        return;
+      }
+      try {
+        setStatus(status, "Loading source image…");
+        const { bytes, label } = await loadSourceBytes();
+        setStatus(status, `Encrypting ${bytes.length.toLocaleString()} bytes from ${label}…`);
+        const encrypted = await encryptBytes(bytes, passphrase);
+        const { canvas, width, height } = bytesToRgbPngData(encrypted);
+        cleanupObjectUrl(lastEncodedObjectUrl);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+        lastEncodedObjectUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = lastEncodedObjectUrl;
+        a.download = outName.endsWith(".png") ? outName : `${outName}.png`;
+        a.click();
+        setStatus(status, `Done. Built encrypted PNG ${width}×${height} and started download.`, "ok");
+      } catch (err) {
+        setStatus(status, err?.message || String(err), "bad");
+      }
+    });
+
+    $("clearBtn").addEventListener("click", () => {
+      $("urlInput").value = "";
+      $("fileInput").value = "";
+      $("passInput").value = "";
+      $("nameInput").value = "vault.png";
+      $("encodeStatus").className = "status";
+      $("encodeStatus").textContent = "Waiting for an image source.";
+    });
+
+    async function decodeFromFile(file, passphrase) {
+      const bytes = await readFileBytes(file);
+      const blob = new Blob([bytes], { type: file.type || "image/png" });
+      const imgUrl = URL.createObjectURL(blob);
+      try {
+        const img = await new Promise((resolve, reject) => {
+          const el = new Image();
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error("Could not load encrypted PNG."));
+          el.src = imgUrl;
+        });
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0);
+        const rgbBytes = rgbPngDataToBytes(canvas);
+        const plain = await decryptBytes(rgbBytes, passphrase);
+        return plain;
+      } finally {
+        URL.revokeObjectURL(imgUrl);
+      }
+    }
+
+    $("decodeBtn").addEventListener("click", async () => {
+      const status = $("decodeStatus");
+      const file = $("decodeFileInput").files?.[0];
+      const passphrase = $("decodePassInput").value;
+      if (!file) {
+        setStatus(status, "Choose an encrypted PNG first.", "bad");
+        return;
+      }
+      if (!passphrase) {
+        setStatus(status, "Add the passphrase used during encryption.", "bad");
+        return;
+      }
+      try {
+        setStatus(status, "Reading encrypted RGB data…");
+        const plain = await decodeFromFile(file, passphrase);
+        const restoredBlob = new Blob([plain], { type: "image/png" });
+        const restoredBytes = plain.length;
+        const kind = restoredBlob.type || "image/octet-stream";
+        showPreviewWithImageBlob(restoredBlob, `restored-${file.name.replace(/\.png$/i, "")}.png`);
+        $("metaType").textContent = kind;
+        $("metaBytes").textContent = restoredBytes.toLocaleString();
+        setStatus(status, `Decryption worked. Restored ${restoredBytes.toLocaleString()} bytes.`, "ok");
+      } catch (err) {
+        setStatus(status, err?.message || String(err), "bad");
+        $("metaType").textContent = "-";
+        $("metaBytes").textContent = "-";
+        $("metaDownload").textContent = "-";
+        $("downloadLink").style.display = "none";
+      }
+    });
+
+    $("decodeFileInput").addEventListener("change", () => {
+      const file = $("decodeFileInput").files?.[0];
+      if (file) setStatus($("decodeStatus"), `Loaded ${file.name}. Ready to decrypt.`, "ok");
+    });
+
+    const dropzone = $("dropzone");
+    ["dragenter", "dragover"].forEach((evt) => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add("dragover");
+      });
+    });
+    ["dragleave", "drop"].forEach((evt) => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove("dragover");
+      });
+    });
+    dropzone.addEventListener("drop", (e) => {
+      const file = e.dataTransfer.files?.[0];
+      if (file && file.type.startsWith("image/")) {
+        $("fileInput").files = e.dataTransfer.files;
+        setStatus($("encodeStatus"), `Loaded ${file.name}. Ready to encrypt.`, "ok");
+      } else {
+        setStatus($("encodeStatus"), "Drop an image file, not a sandwich of unrelated bytes.", "bad");
+      }
+    });
+  </script>
+</body>
+</html>
